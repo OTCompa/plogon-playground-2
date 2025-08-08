@@ -1,10 +1,12 @@
-﻿using Dalamud.Game.Command;
+using Dalamud.Game.Command;
+using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using System.IO;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using SamplePlugin.Windows;
+using System;
+using System.IO;
 
 namespace SamplePlugin;
 
@@ -16,6 +18,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
+    [PluginService] internal static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
 
     private const string CommandName = "/pmycommand";
 
@@ -68,10 +71,10 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler(CommandName);
     }
 
-    private void OnCommand(string command, string args)
+    private unsafe void OnCommand(string command, string args)
     {
-        // in response to the slash command, just toggle the display status of our main ui
-        ToggleMainUI();
+        var castBarEnemy = RaptureAtkUnitManager.Instance()->GetAddonByName("CastBarEnemy");
+        Log.Debug(new IntPtr(castBarEnemy).ToString("X2"));
     }
 
     private void DrawUI() => WindowSystem.Draw();
