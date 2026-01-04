@@ -1,20 +1,20 @@
-using System;
+﻿using System;
 using System.Numerics;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 
 namespace SamplePlugin.Windows;
 
 public class MainWindow : Window, IDisposable
 {
-    private string GoatImagePath;
-    private Plugin Plugin;
+    private readonly string goatImagePath;
+    private readonly Plugin plugin;
 
-    // We give this window a hidden ID using ##
-    // So that the user will see "My Amazing Window" as window title,
+    // We give this window a hidden ID using ##.
+    // The user will see "My Amazing Window" as window title,
     // but for ImGui the ID is "My Amazing Window##With a hidden ID"
     public MainWindow(Plugin plugin, string goatImagePath)
         : base("My Amazing Window##With a hidden ID", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
@@ -25,23 +25,19 @@ public class MainWindow : Window, IDisposable
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
-        GoatImagePath = goatImagePath;
-        Plugin = plugin;
+        this.goatImagePath = goatImagePath;
+        this.plugin = plugin;
     }
 
     public void Dispose() { }
 
     public override void Draw()
     {
-        // Do not use .Text() or any other formatted function like TextWrapped(), or SetTooltip().
-        // These expect formatting parameter if any part of the text contains a "%", which we can't
-        // provide through our bindings, leading to a Crash to Desktop.
-        // Replacements can be found in the ImGuiHelpers Class
-        ImGui.TextUnformatted($"The random config bool is {Plugin.Configuration.SomePropertyToBeSavedAndWithADefault}");
+        ImGui.Text($"The random config bool is {plugin.Configuration.SomePropertyToBeSavedAndWithADefault}");
 
         if (ImGui.Button("Show Settings"))
         {
-            Plugin.ToggleConfigUI();
+            plugin.ToggleConfigUi();
         }
 
         ImGui.Spacing();
@@ -54,37 +50,51 @@ public class MainWindow : Window, IDisposable
             // Check if this child is drawing
             if (child.Success)
             {
-                ImGuiHelpers.ScaledDummy(20.0f);
-
-                // Example for other services that Dalamud provides.
-                // ClientState provides a wrapper filled with information about the local player object and client.
-
-                var localPlayer = Plugin.ClientState.LocalPlayer;
-                if (localPlayer == null)
+                ImGui.Text("Have a goat:");
+                var goatImage = Plugin.TextureProvider.GetFromFile(goatImagePath).GetWrapOrDefault();
+                if (goatImage != null)
                 {
-                    ImGui.TextUnformatted("Our local player is currently not loaded.");
-                    return;
-                }
-
-                if (!localPlayer.ClassJob.IsValid)
-                {
-                    ImGui.TextUnformatted("Our current job is currently not valid.");
-                    return;
-                }
-
-                // ExtractText() should be the preferred method to read Lumina SeStrings,
-                // as ToString does not provide the actual text values, instead gives an encoded macro string.
-                ImGui.TextUnformatted($"Our current job is ({localPlayer.ClassJob.RowId}) \"{localPlayer.ClassJob.Value.Abbreviation.ExtractText()}\"");
-
-                // Example for quarrying Lumina directly, getting the name of our current area.
-                var territoryId = Plugin.ClientState.TerritoryType;
-                if (Plugin.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(territoryId, out var territoryRow))
-                {
-                    ImGui.TextUnformatted($"We are currently in ({territoryId}) \"{territoryRow.PlaceName.Value.Name.ExtractText()}\"");
+                    using (ImRaii.PushIndent(55f))
+                    {
+                        ImGui.Image(goatImage.Handle, goatImage.Size);
+                    }
                 }
                 else
                 {
-                    ImGui.TextUnformatted("Invalid territory.");
+                    ImGui.Text("Image not found.");
+                }
+
+                ImGuiHelpers.ScaledDummy(20.0f);
+
+                // Example for other services that Dalamud provides.
+                // PlayerState provides a wrapper filled with information about the player character.
+
+                var playerState = Plugin.PlayerState;
+                if (!playerState.IsLoaded)
+                {
+                    ImGui.Text("Our local player is currently not logged in.");
+                    return;
+                }
+                
+                if (!playerState.ClassJob.IsValid)
+                {
+                    ImGui.Text("Our current job is currently not valid.");
+                    return;
+                }
+
+                // If you want to see the Macro representation of this SeString use `.ToMacroString()`
+                // More info about SeStrings: https://dalamud.dev/plugin-development/sestring/
+                ImGui.Text($"Our current job is ({playerState.ClassJob.RowId}) '{playerState.ClassJob.Value.Abbreviation}' with level {playerState.Level}");
+
+                // Example for querying Lumina, getting the name of our current area.
+                var territoryId = Plugin.ClientState.TerritoryType;
+                if (Plugin.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(territoryId, out var territoryRow))
+                {
+                    ImGui.Text($"We are currently in ({territoryId}) '{territoryRow.PlaceName.Value.Name}'");
+                }
+                else
+                {
+                    ImGui.Text("Invalid territory.");
                 }
             }
         }
