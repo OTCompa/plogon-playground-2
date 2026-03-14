@@ -14,6 +14,7 @@ internal unsafe class Hook : IDisposable
     [Signature("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 48 8B D9 49 8B F8 48 8B 0D ?? ?? ?? ?? 48 8B F2 E8 ?? ?? ?? ?? 48 85 C0 0F 84", DetourName = nameof(HookDetour))]
     private Hook<HookDelegate>? TestHook { get; set; } = null!;
 
+    private readonly Utf8String* name1 = Utf8String.FromString("test123");
     public Hook()
     {
         Plugin.GameInteropProvider.InitializeFromAttributes(this);
@@ -24,6 +25,7 @@ internal unsafe class Hook : IDisposable
     public void Dispose()
     {
         TestHook?.Dispose();
+        name1->Dtor(true);
     }
 
     private IntPtr HookDetour(IntPtr blacklistManager, UInt64 accountId, UInt64 contentId)
@@ -31,7 +33,11 @@ internal unsafe class Hook : IDisposable
         Plugin.Log.Information($"Hooked function called: {accountId}, {contentId}");
         var ret = TestHook!.Original(blacklistManager, accountId, contentId);
         Plugin.Log.Information($"ret: {ret}");
-        return ret;
+        if (ret != 0)
+        {
+            return ret;
+        }
+        return (IntPtr)name1;
         //TestHook!.Original(a1, a2);
     }
 }
