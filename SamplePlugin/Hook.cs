@@ -10,8 +10,8 @@ namespace SamplePlugin;
 
 internal unsafe class Hook : IDisposable
 {
-    private delegate void HookDelegate(IntPtr a1, IntPtr a2);
-    [Signature("48 89 91 ?? ?? ?? ?? C3 ?? ?? ?? ?? ?? ?? ?? ?? 80 A1", DetourName = nameof(HookDetour))]
+    private delegate IntPtr HookDelegate(IntPtr blacklistManager, UInt64 accountId, UInt64 contentId);
+    [Signature("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 48 8B D9 49 8B F8 48 8B 0D ?? ?? ?? ?? 48 8B F2 E8 ?? ?? ?? ?? 48 85 C0 0F 84", DetourName = nameof(HookDetour))]
     private Hook<HookDelegate>? TestHook { get; set; } = null!;
 
     public Hook()
@@ -26,12 +26,12 @@ internal unsafe class Hook : IDisposable
         TestHook?.Dispose();
     }
 
-    private void HookDetour(IntPtr a1, IntPtr a2, IntPtr a3)
+    private IntPtr HookDetour(IntPtr blacklistManager, UInt64 accountId, UInt64 contentId)
     {
-        Plugin.Log.Information($"Hooked function called: {a1:X02}, {a2:X02}");
-        //var ret = TestHook!.Original(a1, a2, a3);
-        //Plugin.Log.Information($"ret: {ret}");
-        //return ret;
-        TestHook!.Original(a1, a2);
+        Plugin.Log.Information($"Hooked function called: {accountId}, {contentId}");
+        var ret = TestHook!.Original(blacklistManager, accountId, contentId);
+        Plugin.Log.Information($"ret: {ret}");
+        return ret;
+        //TestHook!.Original(a1, a2);
     }
 }

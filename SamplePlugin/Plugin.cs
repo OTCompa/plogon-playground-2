@@ -5,6 +5,8 @@ using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using SamplePlugin.Windows;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 
 namespace SamplePlugin;
 
@@ -19,6 +21,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static ISigScanner SigScanner { get; private set; } = null!;
     [PluginService] internal static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
+    [PluginService] internal static IObjectTable ObjectTable { get; private set; } = null!;
 
     private const string CommandName = "/pmycommand";
 
@@ -80,10 +83,13 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler(CommandName);
     }
 
-    private void OnCommand(string command, string args)
+    private unsafe void OnCommand(string command, string args)
     {
-        // In response to the slash command, toggle the display status of our main ui
-        MainWindow.Toggle();
+        var test = ObjectTable.LocalPlayer?.TargetObject?.Address;
+        if (!test.HasValue) return;
+
+        var test2 = (Character*)test.Value;
+        Plugin.Log.Info($"{ObjectTable.LocalPlayer?.TargetObject?.Name}: {test2->AccountId} {test2->ContentId}");
     }
     
     public void ToggleConfigUi() => ConfigWindow.Toggle();
