@@ -15,6 +15,11 @@ namespace SamplePlugin;
 
 internal unsafe class Hook : IDisposable
 {
+    /*
+     * For future reference
+     * camera found by checking non null FFXIV::Client::Graphics::Scene::CameraManager
+     * sig found by checking what modifies FFXIV::Client::Graphics::Scene::Camera during forced cs
+     */
     private unsafe delegate void SpectatorCameraDelegate(byte* a1);
     [Signature("40 56 48 83 EC 50 80 39 00 ", DetourName = nameof(ProcessPacketRSVDataDetour))]
     private Hook<SpectatorCameraDelegate>? SpectatorHook { get; set; } = null!;
