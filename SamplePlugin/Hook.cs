@@ -15,28 +15,26 @@ namespace SamplePlugin;
 
 internal unsafe class Hook : IDisposable
 {
-    private unsafe delegate void ProcessPacketRSVDataDelegate(byte* packet);
-    [Signature("44 8B 09 4C 8D 41 34", DetourName = nameof(ProcessPacketRSVDataDetour))]
-    private Hook<ProcessPacketRSVDataDelegate>? RSVHook { get; set; } = null!;
+    private unsafe delegate void SpectatorCameraDelegate(byte* a1);
+    [Signature("40 56 48 83 EC 50 80 39 00 ", DetourName = nameof(ProcessPacketRSVDataDetour))]
+    private Hook<SpectatorCameraDelegate>? SpectatorHook { get; set; } = null!;
 
 
     public Hook()
     {
         Plugin.GameInteropProvider.InitializeFromAttributes(this);
-        RSVHook?.Enable();
+        SpectatorHook?.Enable();
         Plugin.Log.Info("Hello");
     }
 
     public void Dispose()
     {
-        RSVHook?.Dispose();
+        SpectatorHook?.Dispose();
     }
-    private unsafe void ProcessPacketRSVDataDetour(byte* packet)
+    private unsafe void ProcessPacketRSVDataDetour(byte* a1)
     {
-        RSVHook!.Original(packet);
-        var key = MemoryHelper.ReadStringNullTerminated((nint)(packet + 4));
-        var val = MemoryHelper.ReadString((nint)(packet + 0x34), *(int*)packet);
-        Plugin.Log.Debug($"RSV: {key} {val}");
+        //SpectatorHook!.Original(a1);
+        Plugin.Log.Debug("a");
     }
 
 
